@@ -1,29 +1,25 @@
+イメージをビルドしたので、共有しましょう！ Dockerイメージを共有するには、Dockerレジストリを使用する必要があります。デフォルトのレジストリはDocker Hubで、使用しているすべてのイメージはそこから取得されています。
 
-Now that we've built an image, let's share it! To share Docker images, you have to use a Docker
-registry. The default registry is Docker Hub and is where all of the images we've used have come from.
+## リポジトリの作成
 
-## Create a Repo
+イメージをプッシュするために、まずDocker Hub上にリポジトリを作成する必要があります。
 
-To push an image, we first need to create a repo on Docker Hub.
+1. [Docker Hub](https://hub.docker.com) にアクセスし、必要に応じてログインしてください。
 
-1. Go to [Docker Hub](https://hub.docker.com) and log in if you need to.
+2. **Create Repository** ボタンをクリックします。
 
-1. Click the **Create Repository** button.
+3. リポジトリ名に `getting-started` を使用してください。Visibilityは `Public` に設定してください。
 
-1. For the repo name, use `getting-started`. Make sure the Visibility is `Public`.
+4. **Create** ボタンをクリックしてください！
 
-1. Click the **Create** button!
-
-If you look on the right-side of the page, you'll see a section named **Docker commands**. This gives
-an example command that you will need to run to push to this repo.
+ページの右側にある **Docker commands** というセクションを見ると、このリポジトリにプッシュするために実行する必要がある例示コマンドが表示されます。
 
 ![Docker command with push example](push-command.png){: style=width:75% }
 {: .text-center }
 
-## Pushing our Image
+## イメージのプッシュ
 
-1. In the command line, try running the push command you see on Docker Hub. Note that your command
-   will be using your namespace, not "docker".
+1. コマンドラインで、Docker Hubで表示されるプッシュコマンドを実行してみてください。 `docker` ではなく、ご自身の名前空間を使用することに注意してください。
 
     ```plaintext
     $ docker push docker/getting-started
@@ -31,63 +27,49 @@ an example command that you will need to run to push to this repo.
     An image does not exist locally with the tag: docker/getting-started
     ```
 
-    Why did it fail? The push command was looking for an image named docker/getting-started, but
-    didn't find one. If you run `docker image ls`, you won't see one either.
+    なぜ失敗したのでしょうか？プッシュコマンドは `docker/getting-started` という名前のイメージを探していましたが、それを見つけることができませんでした。`docker image ls` を実行しても、イメージは見つかりません。
 
-    To fix this, we need to "tag" our existing image we've built to give it another name.
+    これを修正するには、構築済みの既存のイメージに別の名前を付けるために "tag" を付ける必要があります。
 
-1. Login to Docker Hub by either clicking on the "Sign In" button in Docker Desktop or using the 
-   command `docker login -u YOUR-USER-NAME`.
+2. Docker Desktopで "Sign In" ボタンをクリックするか、 `docker login -u YOUR-USER-NAME` コマンドを使用してDocker Hubにログインしてください。
 
-1. Use the `docker tag` command to give the `getting-started` image a new name. Be sure to swap out
-   `YOUR-USER-NAME` with your Docker ID.
+3. `getting-started` イメージに新しい名前を付けるために `docker tag` コマンドを使用してください。Docker ID で `YOUR-USER-NAME` を置き換えてください。
 
     ```bash
     docker tag getting-started YOUR-USER-NAME/getting-started
     ```
 
-1. Now try your push command again. If you're copying the value from Docker Hub, you can drop the 
-   `tagname` portion, as we didn't add a tag to the image name. If you don't specify a tag, Docker
-   will use a tag called `latest`.
+4. 今度はプッシュコマンドを再度試してください。Docker Hubから値をコピーしている場合、イメージ名にタグ名を追加しなかったため、それを削除できます。タグを指定しない場合、Dockerは `latest` というタグを使用します。
 
     ```bash
     docker push YOUR-USER-NAME/getting-started
     ```
 
-## Running our Image on a New Instance
+## 新しいインスタンスでのイメージの実行
 
-Now that our image has been built and pushed into a registry, let's try running our app on a brand
-new instance that has never seen this container image! To do this, we will use Play with Docker.
+イメージがビルドされてレジストリにプッシュされたので、新しいインスタンスでアプリを実行してみましょう！ これには、Play with Dockerを使用します。
 
-1. Open your browser to [Play with Docker](https://labs.play-with-docker.com/).
+1. ブラウザを[Play with Docker](https://labs.play-with-docker.com/)に開きます。
 
-1. Log in with your Docker Hub account.
+2. Docker Hubアカウントでログインしてください。
 
-1. Once you're logged in, click on the "+ ADD NEW INSTANCE" link in the left side bar. (If you don't see it, make your browser a little wider.) After a few seconds, a terminal window will be opened in your browser.
+3. ログインしたら、左側のサイドバーにある "+ ADD NEW INSTANCE" リンクをクリックしてください。（表示されない場合は、ブラウザを少し広げてください）数秒後、ブラウザでターミナルウィンドウが開きます。
 
     ![Play with Docker add new instance](pwd-add-new-instance.png){: style=width:75% }
 {: .text-center }
 
-
-1. In the terminal, start your freshly pushed app.
+4. ターミナルで、プッシュしたばかりのアプリを起動してください。
 
     ```bash
     docker run -dp 3000:3000 YOUR-USER-NAME/getting-started
     ```
 
-    You should see the image get pulled down and eventually start up!
+    イメージがダウンロードされ、最終的に起動されるのを確認できるはずです！
 
-1. Click on the 3000 badge when it comes up and you should see the app with your modifications! Hooray!
-    If the 3000 badge doesn't show up, you can click on the "Open Port" button and type in 3000.
+5. badgeの3000をクリックすると、変更されたアプリが表示されます。素晴らしい！
 
-## Recap
+## まとめ
 
-In this section, we learned how to share our images by pushing them to a registry. We then went to a
-brand new instance and were able to run the freshly pushed image. This is quite common in CI pipelines,
-where the pipeline will create the image and push it to a registry and then the production environment
-can use the latest version of the image.
+このセクションでは、イメージをレジストリにプッシュして共有する方法を学びました。次に、全く新しいインスタンスで freshly したイメージを実行する方法を紹介しました。これはCIパイプラインで非常に一般的で、パイプラインがイメージを作成してレジストリにプッシュし、本番環境が最新バージョンのイメージを使用できるようにする方法です。
 
-Now that we have that figured out, let's circle back around to what we noticed at the end of the last
-section. As a reminder, we noticed that when we restarted the app, we lost all of our todo list items.
-That's obviously not a great user experience, so let's learn how we can persist the data across 
-restarts!
+これを解決するために、前のセクションの最後に気づいたことに戻りましょう。リマインダーとして、アプリを再起動すると、すべてのtodoリストアイテムが失われてしまいます。ユーザーエクスペリエンスとしては明らかに良くありませんので、データを再開始時に保持する方法を学びましょう！

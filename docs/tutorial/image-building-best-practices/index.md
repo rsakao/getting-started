@@ -1,16 +1,15 @@
-## Security Scanning
+## セキュリティスキャン
 
-When you have built an image, it is good practice to scan it for security vulnerabilities using the `docker scan` command.
-Docker has partnered with [Snyk](http://snyk.io) to provide the vulnerability scanning service.
+Dockerイメージを構築したあと、`docker scan`コマンドを使ってセキュリティ脆弱性をスキャンすることが良い習慣です。
+Dockerは[Snyk](http://snyk.io)と提携して、脆弱性スキャンサービスを提供しています。
 
-For example, to scan the `getting-started` image you created earlier in the tutorial, you can just type
+例えば、チュートリアルの前に作成した`getting-started`イメージをスキャンするには、単に以下のように入力するだけです。
 
 ```bash
 docker scan getting-started
 ```
 
-The scan uses a constantly updated database of vulnerabilities, so the output you see will vary as new
-vulnerabilities are discovered, but it might look something like this:
+このスキャンでは常に更新される脆弱性データベースが使用されます。したがって見る出力は新しい脆弱性が発見されるたびに異なりますが、以下のように表示される場合があります。
 
 ```plaintext
 ✗ Low severity vulnerability found in freetype/freetype
@@ -31,30 +30,27 @@ vulnerabilities are discovered, but it might look something like this:
   Fixed in: 2.9.9-r4
 ```
 
-The output lists the type of vulnerability, a URL to learn more, and importantly which version of the relevant library
-fixes the vulnerability.
+出力には脆弱性の種類、詳細を調べるためのURL、そして重要なことに脆弱性を修正するための各ライブラリのバージョンが示されています。
 
-There are several other options, which you can read about in the [docker scan documentation](https://docs.docker.com/engine/scan/).
+`docker scan`には他にもいくつかのオプションがあり、[docker scanドキュメント](https://docs.docker.com/engine/scan/)で詳しく読むことができます。
 
-As well as scanning your newly built image on the command line, you can also [configure Docker Hub](https://docs.docker.com/docker-hub/vulnerability-scanning/)
-to scan all newly pushed images automatically, and you can then see the results in both Docker Hub and Docker Desktop.
+ビルドした直後にコマンドラインで新しいイメージをスキャンする以外に、[Docker Hubを設定](https://docs.docker.com/docker-hub/vulnerability-scanning/)して、自動的に新しくプッシュされたすべてのイメージをスキャンし、結果をDocker HubおよびDocker Desktopで確認することもできます。
 
 ![Hub vulnerability scanning](hvs.png){: style=width:75% }
 {: .text-center }
 
-## Image Layering
+## イメージのレイヤー化
 
-Did you know that you can look at how an image is composed? Using the `docker image history`
-command, you can see the command that was used to create each layer within an image.
+イメージがどのように構成されているかを見ることができるということは、多くの情報を得ることができます。
+これには、`docker image history`コマンドを使用して、イメージ内の各レイヤーを作成するために使用されたコマンドを示すことが含まれます。
 
-1. Use the `docker image history` command to see the layers in the `getting-started` image you
-   created earlier in the tutorial.
+1. `getting-started`イメージ内のレイヤーを見るために`docker image history`コマンドを使用します。
 
     ```bash
     docker image history getting-started
     ```
 
-    You should get output that looks something like this (dates/IDs may be different).
+    次のような出力が得られます (日付やIDは異なる場合があります)。
 
     ```plaintext
     IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
@@ -73,26 +69,20 @@ command, you can see the command that was used to create each layer within an im
     <missing>      11 days ago      /bin/sh -c #(nop) ADD file:57d621536158358b1…   5.29MB 
     ```
 
-    Each line represents a layer in the image. The display here shows the base at the bottom with
-    the newest layer at the top. Using this you can also quickly see the size of each layer, helping to
-    diagnose large images.
+    各行はイメージ内の1つのレイヤーを表しています。ここでの表示は、下部に基本があり、一番新しいレイヤーが上部にあることを示しています。これにより、各レイヤーのサイズを簡単に確認できるため、大きなイメージの診断に役立ちます。
 
-1. You'll notice that several of the lines are truncated. If you add the `--no-trunc` flag, you'll get the
-   full output (yes... funny how you use a truncated flag to get untruncated output, huh?)
+1. 行が切り捨てられていることに気づくでしょう。`--no-trunc`フラグを追加すると、完全な出力を取得することができます（はい...切り捨てられたフラグを使用して、切り捨てられていない出力を取得するのは面白いですね？）
 
     ```bash
     docker image history --no-trunc getting-started
     ```
+    
 
+## レイヤーキャッシュ
 
-## Layer Caching
+レイヤーが変更されると、下流のすべてのレイヤーも再作成する必要があります。
 
-Now that you've seen the layering in action, there's an important lesson to learn to help decrease build
-times for your container images.
-
-> Once a layer changes, all downstream layers have to be recreated as well
-
-Let's look at the Dockerfile we were using one more time...
+私たちのDockerfileを再度見てみましょう...
 
 ```dockerfile
 FROM node:18-alpine
@@ -102,16 +92,14 @@ RUN yarn install --production
 CMD ["node", "src/index.js"]
 ```
 
-Going back to the image history output, we see that each command in the Dockerfile becomes a new layer in the image.
-You might remember that when we made a change to the image, the yarn dependencies had to be reinstalled. Is there a
-way to fix this? It doesn't make much sense to ship around the same dependencies every time we build, right?
+イメージ履歴出力に戻ると、Dockerfile内の各コマンドがイメージ内の新しいレイヤーとして表されます。
+イメージを変更するとき、yarnの依存関係を再インストールする必要がありました。これを解決する方法はありますか？
+同じ依存関係を何度も構築して運送するのはあまり意味がないからですか？
 
-To fix this, we need to restructure our Dockerfile to help support the caching of the dependencies. For Node-based
-applications, those dependencies are defined in the `package.json` file. So what if we start by copying only that file in first,
-install the dependencies, and _then_ copy in everything else? Then, we only recreate the yarn dependencies if there was
-a change to the `package.json`. Make sense?
+これを修正するためには、依存関係をキャッシュすることをサポートするためにDockerfileを再構成する必要があります。
+Nodeベースのアプリケーションの場合、これらの依存関係は`package.json`ファイルに定義されています。したがって、最初に`package.json`ファイルのみをコピーして依存関係をインストールし、その後で他のすべてをコピーすることから始めましょう。その後に、`package.json`に変更があった場合にのみyarnの依存関係を再作成します。分かりますか？
 
-1. Update the Dockerfile to copy in the `package.json` first, install dependencies, and then copy everything else in.
+1. Dockerfileを更新し、最初に`package.json`をコピーして依存関係をインストールし、その後で他のすべてをコピーするようにします。
 
     ```dockerfile hl_lines="3 4 5"
     FROM node:18-alpine
@@ -122,28 +110,25 @@ a change to the `package.json`. Make sense?
     CMD ["node", "src/index.js"]
     ```
 
-1. Create a file named `.dockerignore` in the same folder as the Dockerfile with the following contents.
+1. Dockerfileと同じフォルダに`.dockerignore`ファイルを作成し、次の内容を記述します。
 
     ```ignore
     node_modules
     ```
 
-    `.dockerignore` files are an easy way to selectively copy only image relevant files.
-    You can read more about this
-    [here](https://docs.docker.com/engine/reference/builder/#dockerignore-file).
-    In this case, the `node_modules` folder should be omitted in the second `COPY` step because otherwise
-    it would possibly overwrite files which were created by the command in the `RUN` step.
-    For further details on why this is recommended for Node.js applications as well as further best practices,
-    have a look at their guide on
-    [Dockerizing a Node.js web app](https://nodejs.org/en/docs/guides/nodejs-docker-webapp/).
+    `.dockerignore`ファイルは、選択的にイメージに関連するファイルのみをコピーする簡単な方法です。
+    [ここ](https://docs.docker.com/engine/reference/builder/#dockerignore-file)で詳しく読むことができます。
+    この場合、2番目の`COPY`ステップでは`node_modules`フォルダのファイルを省略する必要があります。さもなければ、`RUN`ステップで作成されたファイルが上書きされる可能性があるためです。
+    Node.jsアプリケーションにおいてこれがなぜ推奨されるのか、およびそれ以外のベストプラクティスについては、彼らの
+    [Dockerizing a Node.js web app](https://nodejs.org/en/docs/guides/nodejs-docker-webapp/)のガイドを見てください。
 
-1. Build a new image using `docker build`.
+1. `docker build`を使用して新しいイメージを構築します。
 
     ```bash
     docker build -t getting-started .
     ```
 
-    You should see output like this...
+    次のような出力が表示されます。
 
     ```plaintext
     [+] Building 16.1s (10/10) FINISHED
@@ -165,11 +150,11 @@ a change to the `package.json`. Make sense?
     => => naming to docker.io/library/getting-started                                                 0.0s
     ```
 
-    You'll see that all layers were rebuilt. Perfectly fine since we changed the Dockerfile quite a bit.
+    全レイヤーが再構築されたことがわかります。Dockerfileをかなり変更したので完全に正常です。
 
-1. Now, make a change to the `src/static/index.html` file (like change the `<title>` to say "The Awesome Todo App").
+1. 今度は、`src/static/index.html`ファイルを変更します（タイトルを「The Awesome Todo App」と言うように変更します）。
 
-1. Build the Docker image now using `docker build -t getting-started .` again. This time, your output should look a little different.
+1. `docker build -t getting-started .`を使って、今度はDockerイメージを構築します。今回は、出力が少し異なるはずです。
 
     ```plaintext hl_lines="10 11 12"
     [+] Building 1.2s (10/10) FINISHED
@@ -191,24 +176,18 @@ a change to the `package.json`. Make sense?
     => => naming to docker.io/library/getting-started                                                 0.0s
     ```
 
-    First off, you should notice that the build was MUCH faster! You'll see that several steps are using
-    previously cached layers. So, hooray! We're using the build cache. Pushing and pulling this image and updates to it
-    will be much faster as well. Hooray!
+    まず、ビルドがとても高速であることに気づくはずです！いくつかのステップが以前にキャッシュされたレイヤーを使用していることがわかります。万歳！
 
+## マルチステージビルド
 
-## Multi-Stage Builds
+このチュートリアルでは深く掘り下げることはありませんが、マルチステージビルドは複数のステージを使用してイメージを作成する強力なツールであり、次のような多数のメリットがあります。
 
-While we're not going to dive into it too much in this tutorial, multi-stage builds are an incredibly powerful
-tool which help us by using multiple stages to create an image. They offer several advantages including:
+- ビルド時の依存関係とランタイム時の依存関係を分離する
+- アプリが実行するために必要なものだけを提供することにより、全体的なイメージサイズを縮小する
 
-- Separate build-time dependencies from runtime dependencies
-- Reduce overall image size by shipping _only_ what your app needs to run
+### Maven/Tomcatの例
 
-### Maven/Tomcat Example
-
-When building Java-based applications, a JDK is needed to compile the source code to Java bytecode. However,
-that JDK isn't needed in production. You might also be using tools such as Maven or Gradle to help build the app.
-Those also aren't needed in our final image. Multi-stage builds help.
+Javaベースのアプリケーションを構築する場合、JavaソースコードをJavaバイトコードにコンパイルするためにJDKが必要です。ただし、本番環境ではJDKは必要ありません。また、MavenやGradleといったツールを使用してアプリを構築する場合もありますが、これらも最終的なイメージでは必要ありません。マルチステージビルドを使用すると助けられます。
 
 ```dockerfile
 FROM maven AS build
@@ -220,37 +199,29 @@ FROM tomcat
 COPY --from=build /app/target/file.war /usr/local/tomcat/webapps 
 ```
 
-In this example, we use one stage (called `build`) to perform the actual Java build with Maven. In the second
-stage (starting at `FROM tomcat`), we copy in files from the `build` stage. The final image is only the last stage
-being created (which can be overridden using the `--target` flag).
+この例では、Javaビルドを実際に実行するための1つのステージ（`build`と呼ばれる）を使用しています。2番目のステージ（`FROM tomcat`以降）では、`build`ステージからファイルをコピーしています。最終的なイメージは、`--target`フラグを使用してオーバーライドできる最後のステージのみが作成されます。
 
 
-### React Example
+### Reactの例
 
-When building React applications, we need a Node environment to compile the JS code (typically JSX), SASS stylesheets,
-and more into static HTML, JS, and CSS. Although if we aren't performing server-side rendering, we don't even need a Node environment
-for our production build. Why not ship the static resources in a static nginx container?
+Reactアプリケーションを構築する場合、JSコード（通常はJSX）、SASSスタイルシートなどを静的なHTML、JS、およびCSSにコンパイルするにはNode環境が必要です。ただし、サーバで実行する場合は、Node環境が必要ありません。また、Reactアプリでは通常、コンパイルされた静的資産だけが必要です。
+
+以下は、マルチステージビルドによるReactアプリの例です。
 
 ```dockerfile
-FROM node:18 AS build
+FROM node:14-alpine as build
 WORKDIR /app
-COPY package* yarn.lock ./
-RUN yarn install
-COPY public ./public
-COPY src ./src
-RUN yarn run build
+COPY package.json .
+RUN yarn install --production
+COPY . .
+RUN yarn build
 
 FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 ```
 
-Here, we are using a `node:18` image to perform the build (maximizing layer caching) and then copying the output
-into an nginx container. Cool, huh?
+この例では、最初のステージ（`build`と呼ばれる）は、Node.jsを使用してReactアプリをビルドします。2番目のステージでは、Nginxを使用してサーバーを提供し、最初のステージからビルドされた静的資産を提供します。依存関係は分離されます。
 
+## おわりに
 
-## Recap
-
-By understanding a little bit about how images are structured, we can build images faster and ship fewer changes.
-Scanning images gives us confidence that the containers we are running and distributing are secure.
-Multi-stage builds also help us reduce overall image size and increase final container security by separating
-build-time dependencies from runtime dependencies.
+[Docker documentation](https://docs.docker.com/) には、Dockerの基本的な概念、構文、およびコマンドについて詳しく説明されています。これらのリソースは、Dockerによるコンテナ化の学習に役立ちます。

@@ -2,71 +2,52 @@
 next_page: app.md
 ---
 
-## The command you just ran
+## 実行したコマンド
 
-Congratulations! You have started the container for this tutorial!
-Let's first explain the command that you just ran. In case you forgot,
-here's the command:
+おめでとうございます！このチュートリアル用のコンテナを開始しました！
+まず、実行されたコマンドを説明します。忘れた場合は、次のコマンドです。
 
 ```cli
 docker run -d -p 80:80 docker/getting-started
 ```
 
-You'll notice a few flags being used. Here's some more info on them:
+使用されているフラグがいくつかあることに気付くでしょう。以下にそれらに関する詳細情報を記載します：
 
-- `-d` - run the container in detached mode (in the background)
-- `-p 80:80` - map port 80 of the host to port 80 in the container
-- `docker/getting-started` - the image to use
+- `-d` - コンテナをデタッチモード（バックグラウンド）で実行します。
+- `-p 80:80` - ホストのポート80をコンテナのポート80にマップします。
+- `docker/getting-started` - 使うイメージ名
 
-!!! info "Pro tip"
-    You can combine single character flags to shorten the full command.
-    As an example, the command above could be written as:
+!!! info "プロのヒント"
+    短縮されたフラグを組み合わせて、コマンド全体を短くすることができます。
+    上記のコマンドは次のように書くこともできます：
     ```
     docker run -dp 80:80 docker/getting-started
     ```
 
-## The Docker Dashboard
+## Dockerダッシュボード
 
-Before going any further, we want to highlight the Docker Dashboard, which gives
-you a quick view of the containers running on your machine. It provides you 
-access to container logs, lets you get a shell inside the container, and allows you to easily manage container lifecycle (stop, remove, etc.). 
+さらに進む前に、コンテナを簡単に表示できるDockerダッシュボードについて紹介します。これにより、あなたのマシン上で実行しているコンテナのクイックビューを取得できます。これにより、コンテナログにアクセスしたり、コンテナ内のシェルを取得したり、コンテナライフサイクルを簡単に管理したりできます（停止、削除など）。
 
-To access the dashboard, follow the instructions in the 
-[Docker Desktop manual](https://docs.docker.com/desktop/). If you open the dashboard
-now, you will see this tutorial running! The container name (`jolly_bouman` below) is a
-randomly created name. So, you'll most likely have a different name.
+ダッシュボードにアクセスするには、[Docker Desktop manual](https://docs.docker.com/desktop/)の手順に従ってください。今すぐダッシュボードを開くと、このチュートリアルが実行されているのが見えます！コンテナ名（以下の場合は `jolly_bouman`）はランダムに生成された名前です。そのため、異なる名前が表示される可能性があります。
 
-![Tutorial container running in Docker Dashboard](tutorial-in-dashboard.png)
+![チュートリアルコンテナがDockerダッシュボードで実行中](tutorial-in-dashboard.png)
 
 
-## What is a container?
+## コンテナとは？
 
-Now that you've successfully run a container, let's ask ourselves what _is_ a container? Simply put, a container is
-another process on your machine that has been isolated from all other processes
-on the host machine. That isolation leverages [kernel namespaces and cgroups](https://medium.com/@saschagrunert/demystifying-containers-part-i-kernel-space-2c53d6979504), features that have been 
-in Linux for a long time. Docker has worked to make these capabilities approachable and easy to use.
+これで、コンテナを正常に実行したので、_コンテナ_とは何かについて考え���みましょう。単純に言えば、コンテナは、ホストマシン上のすべての他のプロセスから分離された、マシン上の別のプロセスです。その分離は、[カーネルの名前空間とcgroups](https://medium.com/@saschagrunert/demystifying-containers-part-i-kernel-space-2c53d6979504)を活用しています。これらの機能は、Linuxに長年存在しています。Dockerはこれらの機能を使いやすくし、利用しやすくするために取り組んでいます。
 
 !!! info 
-    "Creating Containers from Scratch"
-    If you'd like to see how containers are built from scratch, Liz Rice from Aqua Security
-    has a fantastic talk in which she creates a container from scratch in Go. While she makes
-    a simple container, this talk doesn't go into networking, using images for the filesystem, 
-    and more. But, it gives a _fantastic_ deep dive into how things are working.
+    "スクラッチからコンテナを作成する"
+    コンテナがスクラッチからどのように構築されるかを見たい場合は、Aqua SecurityのLiz Rice氏がGoでシンプルなコンテナを作成している素晴��しいトークがあります。彼女は単純なコンテナを作成していますが、このトークでは、ネットワーキング、ファイルシステムのイメージの使用などは扱っていません。しかし、非常に素晴らしい深い洞察を提供してくれます。
 
     <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/8fi7uSYlOdc" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## What is a container image?
+## コンテナイメージとは？
 
-When running a container, it uses an isolated filesystem. This custom filesystem is provided 
-by a **container image**. Since the image contains the container's filesystem, it must include everything 
-needed to run the application - all dependencies, configuration, scripts, binaries, etc. The 
-image also contains other configuration for the container, such as environment variables,
-a default command to run, and other metadata.
+コンテナを実行すると、分離されたファイルシステムが使用されます。このカスタムファイルシステムは、**コンテナイメージ** によって提供されます。イメージには、アプリケーションを実行するために必要なすべての依存関係、構成、スクリプト、バイナリなどが含まれている必要があります。 イメージには、環境変数、実行するデフォルトのコマンド、およびその他のメタデータなど、コンテナの他の構成も含まれています。
 
-We'll dive deeper into images later on, covering topics such as layering, best practices, and more.
+後ほど、レイヤリング、ベストプラクティスなどのトピックについて詳しく説明します。
 
 !!! info
-    If you're familiar with `chroot`, think of a container as an extended version of `chroot`. The
-    filesystem is simply coming from the image whereas a container adds additional isolation that is not
-    available when simply using chroot.
-
+    chrootに慣れている場合は、コンテナを`chroot` の拡張版だと思ってください。ファイルシステムはイメージから来ているだけで、コンテナには `chroot` を使用する場合に利用できない追加の分離があります。

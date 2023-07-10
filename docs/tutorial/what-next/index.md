@@ -1,26 +1,14 @@
+コンテナに関するワークショップは終了しましたが、まだ学ぶことはたくさんあります！
+ここでは詳しく説明しませんが、次に進む前に以下の領域をいくつか確認しておきましょう！
 
-Although we're done with our workshop, there's still a LOT more to learn about containers!
-We're not going to go deep-dive here, but here are a few other areas to look at next!
+## コンテナオーケストレーション
 
-## Container Orchestration
+本番でコンテナを実行するのは難しいです。単に`docker run`または`docker compose up`というコマンドを実行したいわけではありません。なぜなら、もしコンテナが停止した場合どうなるか、複数のマシンでスケールする方法は？この問題を解決するには、コンテナオーケストレーションが必要です。Kubernetes、Swarm、Nomad、ECSなどのツールがあり、それぞれ多少異なる方法でこの問題に対処するのに役立ちます。
 
-Running containers in production is tough. You don't want to log into a machine and simply run a
-`docker run` or `docker compose up`. Why not? Well, what happens if the containers die? How do you
-scale across several machines? Container orchestration solves this problem. Tools like Kubernetes,
-Swarm, Nomad, and ECS all help solve this problem, all in slightly different ways.
+一般的な考え方は、「マネージャー」が「期待される状態」を受け取ることです。この状態は、「Webアプリケーションの2つのインスタンスを実行し、ポート80を公開したい」といったものです。その後、マネージャーはクラスタ内のすべてのマシンを見て、「ワーカー」ノードに仕事を委任します。マネージャーは変更（コンテナの終了など）を監視し、実際の状態が期待される状態と一致するように作業します。
 
-The general idea is that you have "managers" who receive **expected state**. This state might be
-"I want to run two instances of my web app and expose port 80." The managers then look at all of the
-machines in the cluster and delegate work to "worker" nodes. The managers watch for changes (such as
-a container quitting) and then work to make **actual state** reflect the expected state.
+## Cloud Native Computing Foundation プロジェクト
 
+CNCFは、Kubernetes、Prometheus、Envoy、Linkerd、NATSなどのさまざまなオープンソースプロジェクトのベンダーニュートラルなホームです。[ここ](https://www.cncf.io/projects/)で卒業または孵化中のプロジェクトを表示でき、[ここ](https://landscape.cncf.io/)でCNCFランドスケープ全体を表示できます。モニタリング、ログ記録、セキュリティ、イメージレジストリ、メッセージングなどの問題を解決するための多数のプロジェクトがあります！
 
-## Cloud Native Computing Foundation Projects
-
-The CNCF is a vendor-neutral home for various open-source projects, including Kubernetes, Prometheus, 
-Envoy, Linkerd, NATS, and more! You can view the [graduated and incubated projects here](https://www.cncf.io/projects/)
-and the entire [CNCF Landscape here](https://landscape.cncf.io/). There are a LOT of projects to help
-solve problems around monitoring, logging, security, image registries, messaging, and more!
-
-So, if you're new to the container landscape and cloud-native application development, welcome! Please
-connect to the community, ask questions, and keep learning! We're excited to have you!
+したがって、コンテナの世界やクラウドネイティブアプリケーション開発に新しい場合、歓迎します！コミュニティに参加し、質問し、学び続けてください！あなたをサポートすることを楽しみにしています！

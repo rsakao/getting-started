@@ -1,48 +1,40 @@
+前の章では、**名前付きボリューム** を使用してデータを永続化する方法について話しました。
+名前付きボリュームは、単にデータを保存したい場合に優れています。なぜなら、データがどこに保存されているかを心配する必要がないからです。
 
-In the previous chapter, we talked about and used a **named volume** to persist the data in our database.
-Named volumes are great if we simply want to store data, as we don't have to worry about _where_ the data
-is stored.
+**バインドマウント** では、ホスト上のマウントポイントを正確に制御できます。これを使用してデータを永続化することもできますが、しばしばコンテナに追加のデータを提供するために使用されます。アプリケーションを開発する場合、バインドマウントを使用して、ソースコードをコンテナにマウントして、変更に応答し、変更をすぐに確認できるようにします。
 
-With **bind mounts**, we control the exact mountpoint on the host. We can use this to persist data, but is often
-used to provide additional data into containers. When working on an application, we can use a bind mount to
-mount our source code into the container to let it see code changes, respond, and let us see the changes right
-away.
+Node.jsベースのアプリケーションの場合、[nodemon](https://npmjs.com/package/nodemon)はファイルの変更を監視してアプリケーションを再起動するための素晴らしいツールです。他の言語やフレームワークでも同様のツールがあります。
 
-For Node-based applications, [nodemon](https://npmjs.com/package/nodemon) is a great tool to watch for file
-changes and then restart the application. There are equivalent tools in most other languages and frameworks.
+## ボリュームの種類を比較する
 
-## Quick Volume Type Comparisons
+バインドマウントと名前付きボリュームは、Dockerエンジンに付属する2つの主要なボリュームのタイプです。ただし、その他のユースケースをサポートするために、追加のボリュームドライバが利用可能です（[SFTP](https://github.com/vieux/docker-volume-sshfs)、[Ceph](https://ceph.com/geen-categorie/getting-started-with-the-docker-rbd-volume-plugin/)、[NetApp](https://netappdvp.readthedocs.io/en/stable/)、[S3](https://github.com/elementar/docker-s3-volume)など）。
 
-Bind mounts and named volumes are the two main types of volumes that come with the Docker engine. However, additional
-volume drivers are available to support other use cases ([SFTP](https://github.com/vieux/docker-volume-sshfs), [Ceph](https://ceph.com/geen-categorie/getting-started-with-the-docker-rbd-volume-plugin/), [NetApp](https://netappdvp.readthedocs.io/en/stable/), [S3](https://github.com/elementar/docker-s3-volume), and more).
-
-|   | Named Volumes | Bind Mounts |
+|   | 名前付きボリューム | バインドマウント |
 | - | ------------- | ----------- |
-| Host Location | Docker chooses | You control |
-| Mount Example (using `-v`) | my-volume:/usr/local/data | /path/to/data:/usr/local/data |
-| Populates new volume with container contents | Yes | No |
-| Supports Volume Drivers | Yes | No |
+| ホスト上の位置 | Dockerが選択 | あなたが制御 |
+| ボリュームを新しいコンテナ内のコンテンツで埋める | はい | いいえ |
+| ボリュームドライバをサポートする | はい | いいえ |
 
 
-## Starting a Dev-Mode Container
+## 開発モードのコンテナを開始する
 
-To run our container to support a development workflow, we will do the following:
+開発ワークフローをサポートするためにコンテナを実行するには、次の操作を実行します。
 
-- Mount our source code into the container
-- Install all dependencies, including the "dev" dependencies
-- Start nodemon to watch for filesystem changes
+- ソースコードをコンテナにマウントする
+- 「dev」依存関係を含むすべての依存関係をインストールする
+- ファイルシステムの変更を監視するためにnodemonを開始する
 
-So, let's do it!
+それではやってみましょう！
 
-1. Make sure you don't have any of your own `getting-started` containers running (only the tutorial itself should be running).
+1. 自分自身の`getting-started`コンテナが実行されていないことを確認してください（チュートリアル自体だけが実行されている必要があります）。
 
-1. Also make sure you are in app source code directory, i.e. `/path/to/getting-started/app`. If you aren't, you can `cd` into it, .e.g:
+1. `app`のソースコードディレクトリ内にいることを確認してください。例：`/path/to/getting-started/app`。そうでない場合は、次のように`cd`してください。
 
     ```bash
     cd /path/to/getting-started/app
     ```
 
-1. Now that you are in the `getting-started/app` directory, run the following command. We'll explain what's going on afterwards:
+1. 次に、以下のコマンドを実行します。後で何が起こっているか説明します。
 
     ```bash
     docker run -dp 3000:3000 \
@@ -51,7 +43,7 @@ So, let's do it!
         sh -c "yarn install && yarn run dev"
     ```
 
-    If you are using PowerShell then use this command.
+    PowerShellを使用している場合は、このコマンドを使用してください。
 
     ```powershell
     docker run -dp 3000:3000 `
@@ -60,15 +52,13 @@ So, let's do it!
         sh -c "yarn install && yarn run dev"
     ```
 
-    - `-dp 3000:3000` - same as before. Run in detached (background) mode and create a port mapping
-    - `-w /app` - sets the container's present working directory where the command will run from
-    - `-v "$(pwd):/app"` - bind mount (link) the host's present `getting-started/app` directory to the container's `/app` directory. Note: Docker requires absolute paths for binding mounts, so in this example we use `pwd` for printing the absolute path of the working directory, i.e. the `app` directory, instead of typing it manually
-    - `node:18-alpine` - the image to use. Note that this is the base image for our app from the Dockerfile
-    - `sh -c "yarn install && yarn run dev"` - the command. We're starting a shell using `sh` (alpine doesn't have `bash`) and
-      running `yarn install` to install _all_ dependencies and then running `yarn run dev`. If we look in the `package.json`,
-      we'll see that the `dev` script is starting `nodemon`.
+    - `-dp 3000:3000` - 前回と同じです。デタッチド（バックグラウンド）モードで実行し、ポートマッピングを作成します。
+    - `-w /app` - コマンドが実行されるコンテナのカレントディレクトリを設定します。
+    - `-v "$(pwd):/app"` - ホストの現在の`getting-started/app`ディレクトリを、コンテナの`/app`ディレクトリにバインドマウント（リンク）します。注意：Dockerはバインドマウントに絶対パスを必要とするため、この例では、作業ディレクトリ、つまり`app`ディレクトリの絶対パスを印刷するために`pwd`を使用します。
+    - `node:18-alpine` - 使用するイメージです。これは、Dockerfileからアプリのベースイメージであることに注意してください。
+    - `sh -c "yarn install && yarn run dev"` - コマンドです。`sh`（alpineには`bash`がないため）を使用してシェルを起動し、_すべて_の依存関係をインストールするために`yarn install`を実行し、その後`yarn run dev`を実行します。 `package.json`を見ると、`dev`スクリプトが`nodemon`を開始していることがわかります。
 
-1. You can watch the logs using `docker logs -f <container-id>`. You'll know you're ready to go when you see this...
+1. `docker logs -f <container-id>`を使用してログをウォッチできます。次のように表示されると、準備完了です...
 
     ```bash
     docker logs -f <container-id>
@@ -82,38 +72,28 @@ So, let's do it!
     Listening on port 3000
     ```
 
-    When you're done watching the logs, exit out by hitting `Ctrl`+`C`.
+    ログを見ているときに終了するには、`Ctrl`+`C`を押して終了してください。
 
-1. Now, let's make a change to the app. In the `src/static/js/app.js` file, let's change the "Add Item" button to simply say
-   "Add". This change will be on line 109 - remember to save the file.
+1. 今度はアプリケーションを変更してみましょう。 `src/static/js/app.js`ファイルで、「Add Item」ボタンを「Add」に変更します。この変更は109行目にあります - ファイルを保存することを忘れないでください。
 
     ```diff
     -                         {submitting ? 'Adding...' : 'Add Item'}
     +                         {submitting ? 'Adding...' : 'Add'}
     ```
 
-1. Simply refresh the page (or open it) and you should see the change reflected in the browser almost immediately. It might
-   take a few seconds for the Node server to restart, so if you get an error, just try refreshing after a few seconds.
+1. 単純にページを更新するか、開くだけで、ブラウザで変更がほぼ即座に反映されるはずです。 Nodeサーバーが再起動するまで数秒かかる場合があるため、エラーが表示された場合は数秒後にもう一度更新してください。
 
-    ![Screenshot of updated label for Add button](updated-add-button.png){: style="width:75%;"}
+    ![Updated label for Add button のスクリーンショット](updated-add-button.png){: style="width:75%;"}
     {: .text-center }
 
-1. Feel free to make any other changes you'd like to make. When you're done, stop the container and build your new image
-   using `docker build -t getting-started .`.
+1. 他にも変更したいことがあれば、自由に変更してください。終わったら、コンテナを停止し、新しいイメージを`docker build -t getting-started .`を使用してビルドしてください。
 
+バインドマウントは、ローカル開発セットアップでは非常に一般的です。利点は、開発マシンにビルドツールと環境をすべてインストールする必要がないことです。1つの`docker run`コマンドで、dev環境がプルされて準備完了になります。Docker Composeについては、将来のステップで説明します。これにより、フラグが多くなっています。
 
-Using bind mounts is _very_ common for local development setups. The advantage is that the dev machine doesn't need to have
-all of the build tools and environments installed. With a single `docker run` command, the dev environment is pulled and ready
-to go. We'll talk about Docker Compose in a future step, as this will help simplify our commands (we're already getting a lot
-of flags).
+## まとめ
 
-## Recap
+この時点で、データベースを永続化し、投資家や創業者の要望に素早く対応することができます。やったね！ただし、素晴らしいニュースが届きました！
 
-At this point, we can persist our database and respond rapidly to the needs and demands of our investors and founders. Hooray!
-But, guess what? We received great news!
+**あなたのプロジェクトが将来開発対象に選ばれました！**
 
-**Your project has been selected for future development!** 
-
-In order to prepare for production, we need to migrate our database from working in SQLite to something that can scale a
-little better. For simplicity, we'll keep with a relational database and switch our application to use MySQL. But, how 
-should we run MySQL? How do we allow the containers to talk to each other? We'll talk about that next!
+生産準備を整えるために、SQLiteで動作していたデータベースを、少しスケーラブルなものに切り替える必要があります。単純化のために、リレーショナルデータベースを使用したまま、アプリケーションをMySQLに切り替えます。しかし、MySQLをどのように実行すればよいのでしょうか？コンテナ同士が通信する方法は？次の章で説明します！

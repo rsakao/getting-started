@@ -1,114 +1,100 @@
-
-As a small feature request, we've been asked by the product team to
-change the "empty text" when we don't have any todo list items. They
-would like to transition it to the following:
+空のToDoリストがない場合に表示される "empty text" を変更するように製品チームから機能追加の要望がありました。以下のように変更することを希望しています。
 
 > You have no todo items yet! Add one above!
 
-Pretty simple, right? Let's make the change.
+それでは、この変更を行ってみましょう。
 
-## Updating our Source Code
+## ソースコードの更新
 
-1. In the `src/static/js/app.js` file, update line 56 to use the new empty text.
+1. `src/static/js/app.js` ファイル内の 56 行目を、新しい空のテキストを使用するように更新してください。
 
     ```diff
     -                <p className="text-center">No items yet! Add one above!</p>
     +                <p className="text-center">You have no todo items yet! Add one above!</p>
     ```
 
-1. Let's build our updated version of the image, using the same command we used before.
+1. 前回と同じコマンドを使用して、更新したイメージをビルドしてみましょう。
 
     ```bash
     docker build -t getting-started .
     ```
 
-1. Let's start a new container using the updated code.
+1. 更新されたコードを使用して新しいコンテナを起動しましょう。
 
     ```bash
     docker run -dp 3000:3000 getting-started
     ```
 
-**Uh oh!** You probably saw an error like this (the IDs will be different):
+**あれ？** おそらくこのようなエラーが表示されたはずです（ID は異なります）：
 
 ```bash
 docker: Error response from daemon: driver failed programming external connectivity on endpoint laughing_burnell 
 (bb242b2ca4d67eba76e79474fb36bb5125708ebdabd7f45c8eaf16caaabde9dd): Bind for 0.0.0.0:3000 failed: port is already allocated.
 ```
 
-So, what happened? We aren't able to start the new container because our old container is still
-running. The reason this is a problem is because that container is using the host's port 3000 and
-only one process on the machine (containers included) can listen to a specific port. To fix this, 
-we need to remove the old container.
+どうしてこれが起こったのでしょうか？古いコンテナがまだ実行されているため、新しいコンテナを開始できません。
+この問題が発生する理由は、そのコンテナがホストのポート3000を使用しているためで、マシン上の1つのプロセス（コンテナを含む）しか特定のポートを聞くことができません。この問題を解決するには、古いコンテナを削除する必要があります。
 
+## 古いコンテナの置換
 
-## Replacing our Old Container
+コンテナを削除するには、まず停止する必要があります。停止したら、コンテナを削除できます。古いコンテナを削除する方法は２つあります。自分が最も使い慣れている方法を選択してください。
 
-To remove a container, it first needs to be stopped. Once it has stopped, it can be removed. We have two
-ways that we can remove the old container. Feel free to choose the path that you're most comfortable with.
+### CLIを使用してコンテナを削除する
 
-
-### Removing a container using the CLI
-
-1. Get the ID of the container by using the `docker ps` command.
+1. `docker ps` コマンドを使用してコンテナの ID を取得します。
 
     ```bash
     docker ps
     ```
 
-1. Use the `docker stop` command to stop the container.
+1. `docker stop` コマンドを使用してコンテナを停止します。
 
     ```bash
-    # Swap out <the-container-id> with the ID from docker ps
+    # <the-container-id> の部分を docker ps に表示された ID で置き換えてください。
     docker stop <the-container-id>
     ```
 
-1. Once the container has stopped, you can remove it by using the `docker rm` command.
+1. 一度コンテナが停止したら、`docker rm` コマンドを使用して削除できます。
 
     ```bash
     docker rm <the-container-id>
     ```
 
-!!! info "Pro tip"
-    You can stop and remove a container in a single command by adding the "force" flag
-    to the `docker rm` command. For example: `docker rm -f <the-container-id>`
+!!! info "プロのヒント"
+    `-f`フラグを `docker rm` コマンドに加えることで、コンテナを１つのコマンドで停止 & 削除で���ます。例： `docker rm -f <the-container-id>`
 
-### Removing a container using the Docker Dashboard
+### Dockerダッシュボードを使用してコンテナを削除する
 
-If you open the Docker dashboard, you can remove a container with two clicks! It's certainly
-much easier than having to look up the container ID and remove it.
+Dockerダッシュボードを開けば、２クリックでコンテナを削除できます！コンテナのIDを調べて削除するよりも簡単です。
 
-1. With the dashboard opened, hover over the app container and you'll see a collection of action
-    buttons appear on the right.
+1. ダッシュボードを開いた状態で、アプリのコンテナにカーソルを合わせると、右側にアクションボタンの集合が表示���れます。
 
-1. Click on the trash can icon to delete the container. 
+1. ゴミ箱のアイコンをクリックしてコンテナを削除します。
 
-1. Confirm the removal and you're done!
+1. 削除を確認したら、完了です！
 
-![Docker Dashboard - removing a container](dashboard-removing-container.png)
+![Dockerダッシュボード - コンテナの削除](dashboard-removing-container.png)
 
 
-### Starting our updated app container
+### 更新されたアプリコンテナの開始
 
-1. Now, start your updated app.
+1. 更新されたアプリを開始します。
 
     ```bash
     docker run -dp 3000:3000 getting-started
     ```
 
-1. Refresh your browser on [http://localhost:3000](http://localhost:3000) and you should see your updated help text!
+1. [http://localhost:3000](http://localhost:3000) でブラウザを更新して、更新されたヘルプテキストが表示されることを確認してください。
 
 ![Updated application with updated empty text](todo-list-updated-empty-text.png){: style="width:55%" }
 {: .text-center }
 
 
+## まとめ
 
-## Recap
+アップデートができたものの、２つ問題点がありました：
 
-While we were able to build an update, there were two things you might have noticed:
+- ToDoリストにあるすべての項目が消えてなくなってしまいました！あまり良いアプリではありません。 これについてはすぐに説明します。
+- この小さな変更に対して多くの手順が必要でした。次のセクションでは、変更ごとにイメージを再ビルドして新しいコンテナを起動する必要がない方法を見ていきます。
 
-- All of the existing items in our todo list are gone! That's not a very good app! We'll talk about that
-shortly.
-- There were _a lot_ of steps involved for such a small change. In an upcoming section, we'll talk about 
-how to see code updates without needing to rebuild and start a new container every time we make a change.
-
-Before talking about persistence, we'll quickly see how to share these images with others.
+永続性について話す前に、これらのイメージを他の人と共有する方法についてすぐに見てみましょう。

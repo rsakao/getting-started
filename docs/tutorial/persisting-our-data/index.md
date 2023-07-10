@@ -1,133 +1,100 @@
+タスクリストがコンテナを起動するたびに消去されるのは分かりましたか？なぜでしょうか？それでは、コンテナの動作方法について調べてみましょう。
 
-In case you didn't notice, our todo list is being wiped clean every single time
-we launch the container. Why is this? Let's dive into how the container is working.
+## コンテナのファイルシステム
 
-## The Container's Filesystem
+コンテナが実行されると、イメージから各レイヤーを使用してファイルシステムを構築します。各コンテナには、ファイルを作成/更新/削除するための "スクラッチスペース" があります。どのコンテナからもこれらの変更は見えません。たとえ同じイメージを使用している場合でもです。
 
-When a container runs, it uses the various layers from an image for its filesystem.
-Each container also gets its own "scratch space" to create/update/remove files. Any
-changes won't be seen in another container, _even if_ they are using the same image.
+### 実践で確認
 
-### Seeing this in Practice
+これを確認するには、2つのコンテナを起動し、それぞれにファイルを作成します。1つのコンテナで作成されたファイルは、他のコンテナでは利用できないことがわかります。
 
-To see this in action, we're going to start two containers and create a file in each.
-What you'll see is that the files created in one container aren't available in another.
-
-1. Start a `ubuntu` container that will create a file named `/data.txt` with a random number
-   between 1 and 10000.
+1. `/ data.txt` という名前のファイルを作成し、1〜10000のランダムな数値を含める `ubuntu` コンテナを開始します。
 
     ```bash
     docker run -d ubuntu bash -c "shuf -i 1-10000 -n 1 -o /data.txt && tail -f /dev/null"
     ```
 
-    In case you're curious about the command, we're starting a bash shell and invoking two
-    commands (why we have the `&&`). The first portion picks a single random number and writes
-    it to `/data.txt`. The second command is simply watching a file to keep the container running.
+    コマンドが気になる場合は、 bash シェルを開始し、2つのコマンドを実行する方法について(なぜ `&&` を使用するのか)説明します。最初の部分は1つのランダムな数字を選択し、それを `/data.txt` に書き込みます。2番目のコマンドは、単純にコンテナを実行し続けるためのファイルを監視しています。
 
-1. Validate we can see the output by `exec`'ing into the container. To do so, open the Dashboard, find your Ubuntu container, click on the "triple dot" menu to get additional actions, and click on the "Open in terminal" menu item.
+1. `exec` コマンドを使って出力を表示できることを確認します。`Dashboard` を開き、Ubuntu コンテナを見つけ、「トリプルドット」メニューをクリックし、追加のアクションを取得して、「ターミナルで開く」メニュー項目をクリックします。
 
     ![Dashboard open CLI into ubuntu container](dashboard-open-cli-ubuntu.png){: style=width:75% }
-{: .text-center }
 
-    You will see a terminal that is running a shell in the ubuntu container. Run the following command to see the content of the `/data.txt` file. Close this terminal afterwards again.
+    Ubuntu コンテナで実行されているシェルが表示されます。次のコマンドを実行して `/data.txt` ファイルの内容を表示します。その後、このターミナルを閉じてください。
 
     ```bash
     cat /data.txt
     ```
 
-    If you prefer the command line you can use the `docker exec` command to do the same. You need to get the
-   container's ID (use `docker ps` to get it) and get the content with the following command.
+    `docker exec` コマンドを使用した場合は、次のコマンドを使用してコンテナのIDを取得し、内容を取得します。
 
     ```bash
     docker exec <container-id> cat /data.txt
     ```
 
-    You should see a random number!
+    ランダムな数値が表示されるはずです！
 
-1. Now, let's start another `ubuntu` container (the same image) and we'll see we don't have the same
-   file.
+1. 今度は、**同じイメージ** を使用して別の `ubuntu` コンテナを起動し、さっき作成したファイルが存在しないことを確認します。
 
     ```bash
     docker run -it ubuntu ls /
     ```
 
-    And look! There's no `data.txt` file there! That's because it was written to the scratch space for
-    only the first container.
+    `data.txt` ファイルが存在しないことが確認できます。それは最初のコンテナのスクラッチ空間に書き込まれたからです。
 
-1. Go ahead and remove the first container using the `docker rm -f <container-id>` command.
-    ```bash
-    docker rm -f <container-id>
-    ```
+1. 最初のコンテナを `docker rm -f <container-id>` コマンドを使用して削除します。
 
-## Container Volumes
+## コンテナボリューム
 
-With the previous experiment, we saw that each container starts from the image definition each time it starts. 
-While containers can create, update, and delete files, those changes are lost when the container is removed 
-and all changes are isolated to that container. With volumes, we can change all of this.
+前の実験で、コンテナが再起動するたびにイメージ定義から開始されることがわかりました。コンテナはファイルを作成、更新、削除できますが、コンテナが削除されると変更は失われます。すべての変更はそのコンテナに限定されるためです。ボリュームを使用すると、これをすべて変更できます。
 
-[Volumes](https://docs.docker.com/storage/volumes/) provide the ability to connect specific filesystem paths of 
-the container back to the host machine. If a directory in the container is mounted, changes in that
-directory are also seen on the host machine. If we mount that same directory across container restarts, we'd see
-the same files.
+[ボリューム](https://docs.docker.com/storage/volumes/)を使用すると、コンテナの特定のファイルシステムパスをホストマシンに接続できます。コンテナ内のディレクトリがマウントされている場合、そのディレクトリでの変更はホストマシンでも確認できます。同じディレクトリを複数のコンテナでマウントする場合、同じファイルが見えるはずです。
 
-There are two main types of volumes. We will eventually use both, but we will start with **named volumes**.
+主要なボリュームには2つのタイプがあります。両方を使用する予定ですが、最初は **名前付きボリューム** を使用します。
 
-## Persisting our Todo Data
+## Todo データを永続化する
 
-By default, the todo app stores its data in a [SQLite Database](https://www.sqlite.org/index.html) at
-`/etc/todos/todo.db`. If you're not familiar with SQLite, no worries! It's simply a relational database in 
-which all of the data is stored in a single file. While this isn't the best for large-scale applications,
-it works for small demos. We'll talk about switching this to a different database engine later.
+Todo アプリは、デフォルトでは `/etc/todos/todo.db` にある [SQLite データベース](https://www.sqlite.org/index.html) にデータを格納します。SQLite に馴染みがなくても心配しないでください！それは単に関係型データベースで、すべてのデータが単一のファイルに格納されているだけです。大規模なアプリケーションには向いていませんが、小さなデモには適しています。後でこれを別のデータベースエンジンに変更することについて話しましょう。
 
-With the database being a single file, if we can persist that file on the host and make it available to the
-next container, it should be able to pick up where the last one left off. By creating a volume and attaching
-(often called "mounting") it to the directory the data is stored in, we can persist the data. As our container 
-writes to the `todo.db` file, it will be persisted to the host in the volume.
+データベースが単一のファイルであるため、ホスト上でそのファイルを永続化し、次のコンテナで使用できるようにする必要があります。ボリュームを作成し、データが格納されているディレクトリにアタッチ (しばしば「マウント」と呼ばれる) することで、データを永続化できます。コンテナが `todo.db` ファイルに書き込むと、ボリュームに保存されます。
 
-As mentioned, we are going to use a **named volume**. Think of a named volume as simply a bucket of data. 
-Docker maintains the physical location on the disk and you only need to remember the name of the volume. 
-Every time you use the volume, Docker will make sure the correct data is provided.
+名前付きボリュームを使用します。名前付きボリュームは、単にデータのバケットと考えることができます。Docker は物理的な場所をディスク上に保持し、あなたはボリュームの名前だけを覚える必要があります。毎回ボリュームを使用すると、Docker が正しいデータを提供するようになります。
 
-1. Create a volume by using the `docker volume create` command.
+1. `docker volume create` コマンドを使用してボリュームを作成します。
 
     ```bash
     docker volume create todo-db
     ```
 
-1. Stop the todo app container once again in the Dashboard (or with `docker rm -f <container-id>`), as it is still running without using the persistent volume.
+1. Dashboard で todo アプリのコンテナを再度停止します(`docker rm -f <container-id>` を使用することもできます)。
 
-1. Start the todo app container, but add the `-v` flag to specify a volume mount. We will use the named volume and mount
-   it to `/etc/todos`, which will capture all files created at the path.
+1. `-v` フラグを追加して `todo-db:/etc/todos` に名前付きボリュームをマウントし、コンテナを開始します。
 
     ```bash
     docker run -dp 3000:3000 -v todo-db:/etc/todos getting-started
     ```
 
-1. Once the container starts up, open the app and add a few items to your todo list.
+1. コンテナが起動したら、アプリを開いて、Todo リストにアイテムを追加します。
 
     ![Items added to todo list](items-added.png){: style="width: 55%; " }
     {: .text-center }
 
-1. Remove the container for the todo app. Use the Dashboard or `docker ps` to get the ID and then `docker rm -f <container-id>` to remove it.
+1. todo アプリのコンテナを削除します。Dashboard または `docker ps`を使用して ID を取得し、`docker rm -f <container-id>` を使用して削除します。
 
-1. Start a new container using the same command from above.
+1. もう一度上記と同じコマンドを使用して新しいコンテナを開始します。
 
-1. Open the app. You should see your items still in your list!
+1. アプリを開いてください。アイテムが引き継がれているはずです！
 
-1. Go ahead and remove the container when you're done checking out your list.
+1. Todo リストを確認したら、コンテナを削除してください。
 
-Hooray! You've now learned how to persist data!
+おめでとうございます！データの永続化方法を学びました！
 
-!!! info "Pro-tip"
-    While named volumes and bind mounts (which we'll talk about in a minute) are the two main types of volumes supported
-    by a default Docker engine installation, there are many volume driver plugins available to support NFS, SFTP, NetApp, 
-    and more! This will be especially important once you start running containers on multiple hosts in a clustered
-    environment with Swarm, Kubernetes, etc.
+!!! info "プロのアドバイス"
+    デフォルトの Docker エンジンインストールでサポートされている2つのメインボリュームタイプは名前付きボリュームとバインドマウントですが、NFS、SFTP、NetApp などをサポートする多数のボリュームドライバプラグインも利用可能です。これは、Swarm、Kubernetes などのクラスタ環境で複数のホストでコンテナを実行し始めた場合に特に重要になります。
 
-## Diving into our Volume
+## ボリュームについて
 
-A lot of people frequently ask "Where is Docker _actually_ storing my data when I use a named volume?" If you want to know, 
-you can use the `docker volume inspect` command.
+多くの人々は「Docker は名前付きボリュームを使用してデータを保存する場合、実際にどこにデータを保存しているのか？」とよく尋ねます。知りたい場合は、 `docker volume inspect` コマンドを使用できます。
 
 ```bash
 docker volume inspect todo-db
@@ -144,18 +111,14 @@ docker volume inspect todo-db
 ]
 ```
 
-The `Mountpoint` is the actual location on the disk where the data is stored. Note that on most machines, you will
-need to have root access to access this directory from the host. But, that's where it is!
+`Mountpoint` は実際のディスク上の場所です。ほとんどのマシンでは、ホストからこのディレクトリにアクセスするには root アクセスが必要です。それがあなたのデータが保存されている場所です！
 
-!!! info "Accessing Volume data directly on Docker Desktop"
-    While running in Docker Desktop, the Docker commands are actually running inside a small VM on your machine.
-    If you wanted to look at the actual contents of the Mountpoint directory, you would need to first get inside
-    of the VM.
+!!! info "Docker Desktop 上での直接ボリュームデータへのアクセス"
+    Docker Desktop で実行する場合、Docker コマンドは実際にはマシン上の小さな VM 内で実行されています。
+     Mountpoint ディレクトリの実際の内容を確認したい場合は、まず VM の中に入る必要があります。
 
-## Recap
+## まとめ
 
-At this point, we have a functioning application that can survive restarts! We can show it off to our investors and
-hope they can catch our vision!
+この時点で、再起動しても機能するアプリケーションを持っています！投資家に披露して、私たちのビジョンを理解してもらえるといいですね！
 
-However, we saw earlier that rebuilding images for every change takes quite a bit of time. There's got to be a better
-way to make changes, right? With bind mounts (which we hinted at earlier), there is a better way! Let's take a look at that now!
+ただ、前述したように、毎回変更のためにイメージを再構築するのは時間がかかります。何か改善できる方法はないでしょうか？バインドマウント(以前示唆していた方法)があります！今すぐチェックしてみましょう！

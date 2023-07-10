@@ -1,44 +1,34 @@
+マルチコンテナーアプリケーションをすでに扱ってきましたが、MySQL をアプリケーションスタックに追加することを考えています。以下のような問題がしばしば発生します。「MySQL はどこで実行するのですか？同じコンテナにインストールするのか、別々に実行するのか？」一般的には、「それぞれのコンテナは1つのことをしてそれに徹するべきです。」いくつかの理由があります。
 
-Up to this point, we have been working with single container apps. But, we now want to add MySQL to the
-application stack. The following question often arises - "Where will MySQL run? Install it in the same
-container or run it separately?" In general, **each container should do one thing and do it well.** A few
-reasons:
+- API やフロントエンドをデータベースよりも別々にスケールする必要がある可能性が高い。
+- 別々のコンテナでは、バージョンを分離して更新することができます。
+- ローカルでデータベース用のコンテナを使用するかもしれませんが、本番環境ではデータベースのマネージドサービスを使用したい場合もあるでしょう。データベースエンジンをアプリと一緒に出荷するわけにはいきません。
+- 複数のプロセスを実行するにはプロセスマネージャーが必要です（コンテナは1つのプロセスしか開始しないため）、これはコンテナの起動/シャットダウンに複雑さを追加します。
 
-- There's a good chance you'd have to scale APIs and front-ends differently than databases.
-- Separate containers let you version and update versions in isolation.
-- While you may use a container for the database locally, you may want to use a managed service
-  for the database in production. You don't want to ship your database engine with your app then.
-- Running multiple processes will require a process manager (the container only starts one process),
-  which adds complexity to container startup/shutdown.
-
-And there are more reasons. So, we will update our application to work like this:
+そして、もっと理由があります。そのため、次のようにアプリケーションを更新します。
 
 ![Todo App connected to MySQL container](multi-app-architecture.png)
 {: .text-center }
 
 
-## Container Networking
+## コンテナネットワーキング
 
-Remember that containers, by default, run in isolation and don't know anything about other processes
-or containers on the same machine. So, how do we allow one container to talk to another? The answer is
-**networking**. Now, you don't have to be a network engineer (hooray!). Simply remember this rule...
+コンテナはデフォルトで分離されており、同じマシン上の他のプロセスまたはコンテナについて何も知りません。では、1つのコンテナが別のコンテナと話す方法は何でしょうか？答えは **ネットワーキング** です。 ネットワークエンジニアである必要はありません（やった！）。単に次のルールを覚えてください...
 
-> If two containers are on the same network, they can talk to each other. If they aren't, they can't.
+> 同じネットワークにある2つのコンテナは、互いに通信できます。そうでない場合、通信できません。
 
 
-## Starting MySQL
+## MySQL の起動
 
-There are two ways to put a container on a network: 1) Assign it at start or 2) connect an existing container.
-For now, we will create the network first and attach the MySQL container at startup.
+コンテナをネットワークに追加する方法は2つあります。 1) スタート時に割り当てるか 2) 既存のコンテナに接続するか。今回は、最初にネットワークを作成し、MySQL コンテナを起動時にアタッチすることにします。
 
-1. Create the network.
+1. ネットワークを作成します。
 
     ```bash
     docker network create todo-app
     ```
 
-1. Start a MySQL container and attach it to the network. We're also going to define a few environment variables that the
-  database will use to initialize the database (see the "Environment Variables" section in the [MySQL Docker Hub listing](https://hub.docker.com/_/mysql/)).
+1. MySQL コンテナを開始し、ネットワークにアタッチします。 また、データベースを初期化するために使用するいくつかの環境変数を定義します（ [MySQL Docker Hub リスト](https://hub.docker.com/_/mysql/) の「環境変数」セクションを参照）。
 
     ```bash
     docker run -d \
@@ -49,7 +39,7 @@ For now, we will create the network first and attach the MySQL container at star
         mysql:8.0
     ```
 
-    If you are using PowerShell then use this command.
+    PowerShell を使用している場合は、次のコマンドを使用してください。
 
     ```powershell
     docker run -d `
@@ -60,27 +50,24 @@ For now, we will create the network first and attach the MySQL container at star
         mysql:8.0
     ```
 
-    You'll also see we specified the `--network-alias` flag. We'll come back to that in just a moment.
+    `--network-alias` フラグを指定したことにも注目してください。すぐに戻ってきます。
 
-    !!! info "Pro-tip"
-        You'll notice we're using a volume named `todo-mysql-data` here and mounting it at `/var/lib/mysql`, which is
-        where MySQL stores its data. However, we never ran a `docker volume create` command. Docker recognizes we want
-        to use a named volume and creates one automatically for us.
+    !!! info "プロのアドバイス"
+        ここで `todo-mysql-data` という名前のボリュームを使用して、データの保存場所である `/var/lib/mysql` にマウントしていることに気付くかもしれません。しかし、私たちは `docker volume create` コマンドを実行していません。Docker は、名前付きボリュームを使用することを望んでいると認識して自動的にそれを作成します。
 
-1. To confirm we have the database up and running, connect to the database and verify it connects.
+1. データベースが起動していることを確認するために、データベースに接続して接続されていることを確認します。
 
     ```bash
     docker exec -it <mysql-container-id> mysql -p
     ```
 
-    When the password prompt comes up, type in **secret**. In the MySQL shell, list the databases and verify
-    you see the `todos` database.
+    パスワードプロンプトが表示されたら、**secret**と入力します。 MySQL シェルで、データベースをリストし、`todos` データベースが表示されることを確認します。
 
     ```cli
     mysql> SHOW DATABASES;
     ```
 
-    You should see output that looks like this:
+    以下のような出力が表示されるはずです。
 
     ```plaintext
     +--------------------+
@@ -95,34 +82,30 @@ For now, we will create the network first and attach the MySQL container at star
     5 rows in set (0.00 sec)
     ```
 
-    Hooray! We have our `todos` database and it's ready for us to use!
+    準備が整いました！`todos`データベースを使用できるようになりました！
 
-    To exit the sql terminal type `exit` in the terminal.
+    sql ターミナルから抜けるには、ターミナルに `exit` を入力してください。
 
 
-## Connecting to MySQL
+## MySQL に接続する
 
-Now that we know MySQL is up and running, let's use it! But, the question is... how? If we run
-another container on the same network, how do we find the container (remember each container has its own IP
-address)?
+MySQL が起動していることがわかったので、使ってみましょう！でも、問題は...どうやって？同じネットワーク上で別のコンテナを実行した場合、各コンテナには独自の IP アドレスがあることを覚えているでしょうか？
 
-To figure it out, we're going to make use of the [nicolaka/netshoot](https://github.com/nicolaka/netshoot) container,
-which ships with a _lot_ of tools that are useful for troubleshooting or debugging networking issues.
+それを解決するために、非常に役立つトラブルシューティングやデバッグに役立つ多くのツールを備えた [nicolaka/netshoot](https://github.com/nicolaka/netshoot) コンテナを利用します。
 
-1. Start a new container using the nicolaka/netshoot image. Make sure to connect it to the same network.
+1. nicolaka/netshoot イメージを使用して新しいコンテナを起動します。同じネットワークに接続することを忘れないでください。
 
     ```bash
     docker run -it --network todo-app nicolaka/netshoot
     ```
 
-1. Inside the container, we're going to use the `dig` command, which is a useful DNS tool. We're going to look up
-   the IP address for the hostname `mysql`.
+1. コンテナ内で、DNS ツールとして役立つ `dig` コマンドを使用します。`mysql` のホスト名の IP アドレスを検索します。
 
     ```bash
     dig mysql
     ```
 
-    And you'll get an output like this...
+    次のような出力が表示されます。
 
     ```text
     ; <<>> DiG 9.18.8 <<>> mysql
@@ -141,46 +124,36 @@ which ships with a _lot_ of tools that are useful for troubleshooting or debuggi
     ;; SERVER: 127.0.0.11#53(127.0.0.11)
     ;; WHEN: Tue Oct 01 23:47:24 UTC 2019
     ;; MSG SIZE  rcvd: 44
-    ```
+    `` 
+ ```
+「ANSWER SECTION」には、`mysql` の `A` レコードが表示され、そのホスト名に対する IP アドレスが `172.23.0.2` であることが分かります（あなたの IP アドレスは大抵異なる値になるはずです）。通常、`mysql` は有効なホスト名ではありませんが、Docker は、このネットワークエイリアスを持つコンテナの IP アドレスに解決できました（先に使った `--network-alias` フラグを覚えていますか？）。
 
-    In the "ANSWER SECTION", you will see an `A` record for `mysql` that resolves to `172.23.0.2`
-    (your IP address will most likely have a different value). While `mysql` isn't normally a valid hostname,
-    Docker was able to resolve it to the IP address of the container that had that network alias (remember the
-    `--network-alias` flag we used earlier?).
+つまり、私たちのアプリケーションは、`mysql` という名前のホストに接続するだけで、データベースと通信できるようになりました！もう少し簡単な方法はありません！
 
-    What this means is... our app only simply needs to connect to a host named `mysql` and it'll talk to the
-    database! It doesn't get much simpler than that!
-
-    When you're done, run `exit` to close out of the container.
+完了したら、 `exit` を実行してコンテナを終了してください。
 
 
-## Running our App with MySQL
+## MySQL を使用したアプリケーションの実行
 
-The todo app supports the setting of a few environment variables to specify MySQL connection settings. They are:
+todoアプリは、MySQL 接続設定を指定するためのいくつかの環境変数をサポートしています。 それらは以下のとおりです。
 
-- `MYSQL_HOST` - the hostname for the running MySQL server
-- `MYSQL_USER` - the username to use for the connection
-- `MYSQL_PASSWORD` - the password to use for the connection
-- `MYSQL_DB` - the database to use once connected
+- `MYSQL_HOST` - 実行中の MySQL サーバーのホスト名
+- `MYSQL_USER` - 接続に使用するユーザー名
+- `MYSQL_PASSWORD` - 接続に使用するパスワード
+- `MYSQL_DB` - 接続後に使用するデータベース
 
-!!! warning Setting Connection Settings via Env Vars
-    While using env vars to set connection settings is generally ok for development, it is **HIGHLY DISCOURAGED**
-    when running applications in production. Diogo Monica, a former lead of security at Docker,
-    [wrote a fantastic blog post](https://diogomonica.com/2017/03/27/why-you-shouldnt-use-env-variables-for-secret-data/)
-    explaining why.
+!!! warning
+    Env vars を使用して接続設定を指定することは、一般的に開発時には問題ありませんが、本番でアプリケーションを実行する場合には **強く推奨されません**。以前 Docker のセキュリティを担当していた Diogo Monica 
+    は、[ブログ投稿](https://diogomonica.com/2017/03/27/why-you-shouldnt-use-env-variables-for-secret-data/)で詳しく説明しています。
 
-    A more secure mechanism is to use the secret support provided by your container orchestration framework. In most cases,
-    these secrets are mounted as files in the running container. You'll see many apps (including the MySQL image and the todo app)
-    also support env vars with a `_FILE` suffix to point to a file containing the variable.
+    より安全な方法は、コンテナオーケストレーションフレームワークによって提供されるシークレット機能を使用することです。ほとんどの場合、これらのシークレットは実行中のコンテナにファイルとしてマウントされます。多くのアプリケーション（MySQL イメージや todo アプリを含む）も、変数を参照する `_FILE` サフィックスの env vars をサポートしています。
 
-    As an example, setting the `MYSQL_PASSWORD_FILE` var will cause the app to use the contents of the referenced file
-    as the connection password. Docker doesn't do anything to support these env vars. Your app will need to know to look for
-    the variable and get the file contents.
+    たとえば、`MYSQL_PASSWORD_FILE` 変数を設定すると、アプリは参照されたファイルの内容を接続パスワードとして使用します。 Docker は、これらの env vars をサポートするために何も行いません。アプリが変数を探してファイルの内容を取得する必要があります。
 
 
-With all of that explained, let's start our dev-ready container!
+すべての説明を聞いたので、dev-ready コンテナを起動しましょう！
 
-1. We'll specify each of the environment variables above, as well as connect the container to our app network.
+1. 上記のすべての環境変数を指定し、コンテナをアプリのネットワークに接続します。
 
     ```bash hl_lines="3 4 5 6 7"
     docker run -dp 3000:3000 \
@@ -194,7 +167,7 @@ With all of that explained, let's start our dev-ready container!
       sh -c "yarn install && yarn run dev"
     ```
 
-    If you are using PowerShell then use this command.
+    PowerShell を利用している場合は、以下のコマンドを使用してください。
 
     ```powershell hl_lines="3 4 5 6 7"
     docker run -dp 3000:3000 `
@@ -208,8 +181,7 @@ With all of that explained, let's start our dev-ready container!
       sh -c "yarn install && yarn run dev"
     ```
 
-1. If we look at the logs for the container (`docker logs <container-id>`), we should see a message indicating it's
-   using the mysql database.
+1. コンテナのログ（ `docker logs <container-id>` ）を確認すると、MySQL データベースを使用していることが示されるメッセージが表示されます。
 
     ```plaintext hl_lines="7"
     # Previous log messages omitted
@@ -223,16 +195,15 @@ With all of that explained, let's start our dev-ready container!
     Listening on port 3000
     ```
 
-1. Open the app in your browser and add a few items to your todo list.
+1. ブラウザでアプリを開き、タスクを追加します。
 
-1. Connect to the mysql database and prove that the items are being written to the database. Remember, the password
-   is **secret**.
+1. データベースに書き込まれていることを確認するために、MySQL データベースに接続してください。パスワードは **secret** です。
 
     ```bash
     docker exec -it <mysql-container-id> mysql -p todos
     ```
 
-    And in the mysql shell, run the following:
+    MySQL シェルで、次のコマンドを実行します。
 
     ```plaintext
     mysql> select * from todo_items;
@@ -244,22 +215,18 @@ With all of that explained, let's start our dev-ready container!
     +--------------------------------------+--------------------+-----------+
     ```
 
-    Obviously, your table will look different because it has your items. But, you should see them stored there!
+    明らかに、あなたのテーブルは異なる見た目をしています。しかし、そこに格納されているタスクを確認できるはずです。
 
-If you take a quick look at the Docker Dashboard, you'll see that we have two app containers running. But, there's
-no real indication that they are grouped together in a single app. We'll see how to make that better shortly!
+Docker Dashboard をチェックすると、2つのアプリケーションコンテナが実行されていることが分かります。しかし、それらが1つのアプリケーションにグループ化されているという明確な指示はありません。次のセクションでは、Docker Compose について説明します。Docker Compose を使用することで、他の人に簡単なコマンドでアプリケーションスタックを共有することができます！
 
-![Docker Dashboard showing two ungrouped app containers](dashboard-multi-container-app.png)
 
-## Recap
+![グループ化されていない2つのアプリコンテナが表示される Docker Dashboard](dashboard-multi-container-app.png)
 
-At this point, we have an application that now stores its data in an external database running in a separate
-container. We learned a little bit about container networking and saw how service discovery can be performed
-using DNS.
 
-But, there's a good chance you are starting to feel a little overwhelmed with everything you need to do to start up
-this application. We have to create a network, start containers, specify all of the environment variables, expose
-ports, and more! That's a lot to remember and it's certainly making things harder to pass along to someone else.
+## まとめ
 
-In the next section, we'll talk about Docker Compose. With Docker Compose, we can share our application stacks in a
-much easier way and let others spin them up with a single (and simple) command!
+この時点で、外部のデータベースを使用するアプリケーションを持っています。ネットワークについて少し学び、DNS を使ったサービスディスカバリーの方法を見ました。
+
+しかし、起動するために行うことがいろいろあって、少し圧倒されてしまったかもしれません。ネットワークを作成したり、コンテナを開始したり、すべての環境変数を指定したり、ポートを公開したり、その他色々な手順を実行する必要があります！それは覚えるのに多くの時間が必要で、他の人に渡すのも難しくなります。
+
+次のセクションでは、Docker Composeについて説明します。Docker Composeを使えば、もっと簡単な方法でアプリケーションスタックを共有し、1つの（そしてシンプルな）コマンドで他の人に起動させることができます！

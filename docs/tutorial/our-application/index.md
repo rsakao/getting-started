@@ -1,112 +1,80 @@
+このチュートリアルの残りの部分では、Node.jsで実行されているシンプルなTodoリストマネージャーを使用します。Node.jsが馴染みがない場合は心配しないでください！本格的なJavaScriptの経験は必要ありません。
 
-For the rest of this tutorial, we will be working with a simple todo
-list manager that is running in Node.js. If you're not familiar with Node.js,
-don't worry! No real JavaScript experience is needed!
-
-At this point, your development team is quite small and you're simply
-building an app to prove out your MVP (minimum viable product). You want
-to show how it works and what it's capable of doing without needing to
-think about how it will work for a large team, multiple developers, etc.
+この時点では、開発チームは非常に小さく、MVP（最小限の製品）を証明するために単にアプリを構築しています。大きなチーム、複数の開発者など、どのように大きなチーム、複数の開発者などで機能するかを考える必要がなく、どのように動作するかと何ができるかを示したいと考えています。
 
 ![Todo List Manager Screenshot](todo-list-sample.png){: style="width:50%;" }
 { .text-center }
 
-## Getting our App
+## アプリを取得する
 
-Before we can run the application, we need to get the application source code onto 
-our machine. For real projects, you will typically clone the repo. But, for this tutorial,
-we have created a ZIP file containing the application.
+アプリケーションを実行する前に、アプリケーションのソースコードを自分のマシンに取得する必要があります。それぞれの本物のプロジェクトであれば、通常はリポジトリをクローンすることになります。ただし、このチュートリアルでは、アプリケーションが含まれるZIPファイルを作成しました。
 
-1. [Download the ZIP](/assets/app.zip). Open the ZIP file and make sure you extract the
-    contents.
+1. [ZIPをダウンロード] (/assets/app.zip)します。ZIPファイルを開き、内容を抽出していることを確認してください。
 
-1. Once extracted, use your favorite code editor to open the project. If you're in need of
-    an editor, you can use [Visual Studio Code](https://code.visualstudio.com/). You should
-    see the `package.json` and two subdirectories (`src` and `spec`).
+1. 抽出後、お気に入りのコードエディタを使用してプロジェクトを開きます。エディタが必要な場合は、[Visual Studio Code](https://code.visualstudio.com/)を使用できます。 `package.json`と2つのサブディレクトリ（`src`と`spec`）が表示されます。
 
     ![Screenshot of Visual Studio Code opened with the app loaded](ide-screenshot.png){: style="width:650px;margin-top:20px;"}
     {: .text-center }
 
-## Building the App's Container Image
+## アプリのコンテナイメージのビルド
 
-In order to build the application, we need to use a `Dockerfile`. A
-Dockerfile is simply a text-based script of instructions that is used to
-create a container image. If you've created Dockerfiles before, you might
-see a few flaws in the Dockerfile below. But, don't worry! We'll go over them.
+アプリケーションをビルドするには、`Dockerfile`を使用する必要があります。 Dockerfileは、コンテナイメージを作成するために使用される命令のテキストベーススクリプトです。すでにDockerfileを作成したことがある場合は、以下のDockerfileにいくつかの欠陥を見つけるかもしれません。しかし、心配しないでください！その問題について説明します。
 
-1. Create a file named `Dockerfile` in the same folder as the file `package.json` with the following contents.
+1. `package.json`ファイルと同じフォルダに`Dockerfile`という名前のファイルを作成し、次の内容を記述します。
 
-    ```dockerfile
-    FROM node:18-alpine
-    WORKDIR /app
-    COPY . .
-    RUN yarn install --production
-    CMD ["node", "./src/index.js"]
-    ```
+     ```dockerfile
+     FROM node:18-alpine
+     WORKDIR /app
+     COPY . .
+     RUN yarn install --production
+     CMD ["node", "./src/index.js"]
+     ```
+     
+     `Dockerfile`ファイルに`.txt`などのファイル拡張子がないことを確認してください。一部のエディターは、自動的にこのファイル拡張子を追加することがあり、次の手順でエラーが発生する可能性があります。
 
-    Please check that the file `Dockerfile` has no file extension like `.txt`. Some editors may append this file extension automatically and this would result in an error in the next step.
+1. すでにそうしていない場合は、ターミナルを開き、`Dockerfile`がある`app`ディレクトリに移動します。次に、`docker build`コマンドを使用して、コンテナイメージをビルドします。
 
-1. If you haven't already done so, open a terminal and go to the `app` directory with the `Dockerfile`. Now build the container image using the `docker build` command.
+     ```bash
+     docker build -t getting-started .
+     ```
 
-    ```bash
-    docker build -t getting-started .
-    ```
+     このコマンドは、Dockerfileを使用して新しいコンテナイメージをビルドしました。多くの"レイヤー"がダウンロードされたことに気付いたかもしれません。これは、ビルダーに対して`node：18-alpine`イメージから開始したいと指示したためです。ただし、私たちのマシンにそれがなかったため、そのイメージをダウンロードする必要がありました。
 
-    This command used the Dockerfile to build a new container image. You might
-    have noticed that a lot of "layers" were downloaded. This is because we instructed
-    the builder that we wanted to start from the `node:18-alpine` image. But, since we
-    didn't have that on our machine, that image needed to be downloaded.
+     イメージがダウンロードされた後、アプリケーションをコピーし、`yarn`を使用してアプリケーションの依存関係をインストールしました。 `CMD`ディレクティブは、このイメージからコンテナを起動するときに実行するデフォルトのコマンドを指定します。
 
-    After the image was downloaded, we copied in our application and used `yarn` to 
-    install our application's dependencies. The `CMD` directive specifies the default 
-    command to run when starting a container from this image.
+     最後に、`-t`フラグはイメージにタグを付けます。これは、単に最終イメージの人間が読める名前だと考えてください。イメージの名前を`getting-started`としたので、そのイメージを実行するときにそのイメージを参照できます。
 
-    Finally, the `-t` flag tags our image. Think of this simply as a human-readable name
-    for the final image. Since we named the image `getting-started`, we can refer to that
-    image when we run a container.
+     `docker build`コマンドの最後の`.`は、Dockerが現在のディレクトリで`Dockerfile`を探す必要があることを示しています。
 
-    The `.` at the end of the `docker build` command tells that Docker should look for the `Dockerfile` in the current directory.
+## アプリコンテナを開始する
 
-## Starting an App Container
+イメージがあるので、アプリを実行しましょう！これを行うには、`docker run`コマンドを使用します（以前覚えたものですか？）。
 
-Now that we have an image, let's run the application! To do so, we will use the `docker run`
-command (remember that from earlier?).
+1. 新しく作成したイメージの名前を指定して、`docker run`コマンドを使用してコンテナを起動します。
 
-1. Start your container using the `docker run` command and specify the name of the image we 
-    just created:
+     ```bash
+     docker run -dp 3000:3000 getting-started
+     ```
 
-    ```bash
-    docker run -dp 3000:3000 getting-started
-    ```
+     `-d`フラグと`-p`フラグを覚えていますか？私たちは新しいコンテナを「デタッチド」モード（バックグラウンド）で実行し、ホストのポート3000とコンテナのポート3000の間にマッピングを作成しています。ポートマッピングがない場合、アプリケーションにアクセスできません。
 
-    Remember the `-d` and `-p` flags? We're running the new container in "detached" mode (in the 
-    background) and creating a mapping between the host's port 3000 to the container's port 3000.
-    Without the port mapping, we wouldn't be able to access the application.
+1. 数秒後に、Webブラウザを[http：// localhost：3000]（http：// localhost：3000）に開いてください。アプリが表示されます！
 
-1. After a few seconds, open your web browser to [http://localhost:3000](http://localhost:3000).
-    You should see our app!
+     ![Empty Todo List](todo-list-empty.png){: style="width:450px;margin-top:20px;"}
+     {: .text-center }
 
-    ![Empty Todo List](todo-list-empty.png){: style="width:450px;margin-top:20px;"}
-    {: .text-center }
+1. 項目を1つまたは2つ追加して、期待どおりに機能するかどうかを確認してください。項目を完了したり、項目を削除したりすることができます。フロントエンドは、バックエンドにアイテムを正常に格納しています！
+   かなり素早く簡単ですね？
 
-1. Go ahead and add an item or two and see that it works as you expect. You can mark items as
-   complete and remove items. Your frontend is successfully storing items in the backend!
-   Pretty quick and easy, huh?
+この時点では、自分で構築した数個の項目を持つ実行中のToDoリストマネージャーがあります。
+それでは、いくつかの変更を加え、コンテナを管理する方法について学習しましょう。
 
-
-At this point, you should have a running todo list manager with a few items, all built by you!
-Now, let's make a few changes and learn about managing our containers.
-
-If you take a quick look at the Docker Dashboard, you should see your two containers running now 
-(this tutorial and your freshly launched app container)!
+Docker Dashboardを見ると、チュートリアルと新しく起動したアプリコンテナの2つのコンテナが実行されているのがわかります！
 
 ![Docker Dashboard with tutorial and app containers running](dashboard-two-containers.png)
 
+## 総括
 
-## Recap
+この短いセクションでは、コンテナイメージの基礎について学び、それを行うためのDockerfileを作成しました。イメージをビルドした後、コンテナを起動し、実行中のアプリを確認しました！
 
-In this short section, we learned the very basics about building a container image and created a
-Dockerfile to do so. Once we built an image, we started the container and saw the running app!
-
-Next, we're going to make a modification to our app and learn how to update our running application
-with a new image. Along the way, we'll learn a few other useful commands.
+次に、アプリを修正して実行中のアプリケーションを新しいイメージで更新する方法を学びます。その過程で、いくつかの役立つコマンドも学びます。
