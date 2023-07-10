@@ -1,34 +1,31 @@
 # Docker Getting Started Tutorial
 
-This tutorial was written with the intent of helping folks get up and running
-with containers and is designed to work with Docker Desktop. While not going too much 
-into depth, it covers the following topics:
+このチュートリアルは、Docker Desktopで動作するように設計されており、コンテナを使い始める手助けをする目的で書かれています。あまり深く掘り下げてはいませんが、以下のトピックをカバーしています：
 
-- Running your first container
-- Building containers
-- Learning what containers are
-- Running and removing containers
-- Using volumes to persist data
-- Using bind mounts to support development
-- Using container networking to support multi-container applications
-- Using Docker Compose to simplify the definition and sharing of applications
-- Using image layer caching to speed up builds and reduce push/pull size
-- Using multi-stage builds to separate build-time and runtime dependencies
+- 最初のコンテナを実行する
+- コンテナをビルドする
+- コンテナとは何かを学ぶ
+- コンテナの実行と削除
+- ボリュームを使用してデータを永続化する
+- バインドマウントを使用して開発をサポートする
+- コンテナネットワーキングを使用してマルチコンテナアプリケーションをサポートする
+- Docker Composeを使用してアプリケーションの定義と共有を簡素化する
+- イメージレイヤーキャッシングを使用してビルドを高速化し、プッシュ/プルサイズを削減する
+- マルチステージビルドを使用してビルド時と実行時の依存関係を分離する
 
 ## Getting Started
 
-If you wish to run the tutorial, you can use the following command after installing Docker Desktop:
+チュートリアルを実行したい場合は、Docker Desktopをインストールした後、以下のコマンドを使用してください：
 
 ```bash
 docker run -d -p 80:80 docker/getting-started
 ```
 
-Once it has started, you can open your browser to [http://localhost](http://localhost).
+起動したら、ブラウザを開いてアクセスします [http://localhost](http://localhost).
 
 ## Development
 
-This project has a `docker-compose.yml` file, which will start the mkdocs application on your
-local machine and help you see changes instantly.
+このプロジェクトには`docker-compose.yml`ファイルがあり、ローカルマシンでmkdocsアプリケーションを起動し、変更を即座に確認できるようにします。
 
 ```bash
 docker compose up
@@ -36,9 +33,6 @@ docker compose up
 
 ## Contributing
 
-If you find typos or other issues with the tutorial, feel free to create a PR and suggest fixes!
+もしチュートリアルに誤字やその他の問題を見つけたら、遠慮なくPRを作成して修正を提案してください！
 
-If you have ideas on how to make the tutorial better or want to suggest adding new content, please open an 
-issue first before working on your idea. While we love input, we want to keep the tutorial scoped to new-comers.
-As such, we may reject ideas for more advanced requests and don't want you to lose any work you might
-have done. So, ask first and we'll gladly hear your thoughts!
+チュートリアルをより良いものにするためのアイデアがある場合や、新しいコンテンツを追加することを提案したい場合は、そのアイデアに取り組む前に、まず課題を開いてください。チュートリアルをより良いものにするためのアイデアや、新しいコンテンツの追加を提案したい場合は、まず課題を開いてから作業を行ってください。ですから、まずはご質問ください！
