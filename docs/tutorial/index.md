@@ -35,11 +35,11 @@ docker run -d -p 80:80 docker/getting-started
 
 ## コンテナとは？
 
-これで、コンテナを正常に実行したので、_コンテナ_とは何かについて考え���みましょう。単純に言えば、コンテナは、ホストマシン上のすべての他のプロセスから分離された、マシン上の別のプロセスです。その分離は、[カーネルの名前空間とcgroups](https://medium.com/@saschagrunert/demystifying-containers-part-i-kernel-space-2c53d6979504)を活用しています。これらの機能は、Linuxに長年存在しています。Dockerはこれらの機能を使いやすくし、利用しやすくするために取り組んでいます。
+これで、コンテナを正常に実行したので、_コンテナ_ とは何かについて考えてみましょう。単純に言えば、コンテナは、ホストマシン上のすべての他のプロセスから分離された、マシン上の別のプロセスです。その分離は、[カーネルの名前空間とcgroups](https://medium.com/@saschagrunert/demystifying-containers-part-i-kernel-space-2c53d6979504)を活用しています。これらの機能は、Linuxに長年存在しています。Dockerはこれらの機能を使いやすくし、利用しやすくするために取り組んでいます。
 
 !!! info 
     "スクラッチからコンテナを作成する"
-    コンテナがスクラッチからどのように構築されるかを見たい場合は、Aqua SecurityのLiz Rice氏がGoでシンプルなコンテナを作成している素晴��しいトークがあります。彼女は単純なコンテナを作成していますが、このトークでは、ネットワーキング、ファイルシステムのイメージの使用などは扱っていません。しかし、非常に素晴らしい深い洞察を提供してくれます。
+    コンテナがスクラッチからどのように構築されるかを見たい場合は、Aqua SecurityのLiz Rice氏がGoでシンプルなコンテナを作成している素晴らしいトークがあります。彼女は単純なコンテナを作成していますが、このトークでは、ネットワーキング、ファイルシステムのイメージの使用などは扱っていません。しかし、非常に素晴らしい深い洞察を提供してくれます。
 
     <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/8fi7uSYlOdc" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 

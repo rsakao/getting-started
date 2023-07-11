@@ -56,7 +56,7 @@ Node.jsベースのアプリケーションの場合、[nodemon](https://npmjs.c
     - `-w /app` - コマンドが実行されるコンテナのカレントディレクトリを設定します。
     - `-v "$(pwd):/app"` - ホストの現在の`getting-started/app`ディレクトリを、コンテナの`/app`ディレクトリにバインドマウント（リンク）します。注意：Dockerはバインドマウントに絶対パスを必要とするため、この例では、作業ディレクトリ、つまり`app`ディレクトリの絶対パスを印刷するために`pwd`を使用します。
     - `node:18-alpine` - 使用するイメージです。これは、Dockerfileからアプリのベースイメージであることに注意してください。
-    - `sh -c "yarn install && yarn run dev"` - コマンドです。`sh`（alpineには`bash`がないため）を使用してシェルを起動し、_すべて_の依存関係をインストールするために`yarn install`を実行し、その後`yarn run dev`を実行します。 `package.json`を見ると、`dev`スクリプトが`nodemon`を開始していることがわかります。
+    - `sh -c "yarn install && yarn run dev"` - コマンドです。`sh`（alpineには`bash`がないため）を使用してシェルを起動し、_すべて_ の依存関係をインストールするために`yarn install`を実行し、その後`yarn run dev`を実行します。 `package.json`を見ると、`dev`スクリプトが`nodemon`を開始していることがわかります。
 
 1. `docker logs -f <container-id>`を使用してログをウォッチできます。次のように表示されると、準備完了です...
 

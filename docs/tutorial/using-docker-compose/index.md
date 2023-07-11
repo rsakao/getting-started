@@ -19,7 +19,7 @@ Windows、Mac、Linux用にDocker Desktopをインストールした場合、す
     services:
     ```
 
-そして、最後にコンテナー単位で移行していきましょう。
+それでは、composeファイルにサービスをひとつずつ移行していきましょう。
 
 
 ## アプリケーションサービスの定義
@@ -164,10 +164,33 @@ docker run -d \
 services:
   app:
     image: node:18-alpine
-    command: sh -c "yarn install && yarn 
- ```
+    command: sh -c "yarn install && yarn run dev"
+    ports:
+      - 3000:3000
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+      MYSQL_DB: todos
 
-実行するときは以下のようになります:
+  mysql:
+    image: mysql:8.0
+    volumes:
+      - todo-mysql-data:/var/lib/mysql
+    environment: 
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: todos
+
+volumes:
+  todo-mysql-data:
+```
+
+## アプリケーションスタックの実行
+
+docker-compose.ymlファイルがあるので、それを起動できます！
 
 1. 他にアプリ/DBコピーを実行していないことを確認します（`docker ps` および `docker rm -f <ids>`）。
 
@@ -207,29 +230,29 @@ services:
 
 ## Docker Dashboardでのアプリケーションスタックの表示
 
-Docker Dashboardを見ると、**app**という名前のグループがあることがわかります。これはDocker Composeからの「プロジェクト名」で、コンテナをグループ化するために使用されます。デフォルトでは、プロジェクト名は `docker-compose.yml` が存在するディレクトリの名前です。
+Docker Dashboardを見ると、**app** という名前のグループがあることがわかります。これはDocker Composeからの「プロジェクト名」で、コンテナをグループ化するために使用されます。デフォルトでは、プロジェクト名は `docker-compose.yml` が存在するディレクトリの名前です。
 
 ![Docker Dashboard with app project](dashboard-app-project-collapsed.png)
 
-アプリを回し始めると、定義に従って、Dockerコンテナーを２つ生成しているはずです。twirl down the appと言われるように、app内の２つのコンテナを見ることできます。
+appを展開すると、コンポーズファイルで定義した2つのコンテナが表示されます。名称も少し説明的であり、`<プロジェクト名>_<サービス名>_<レプリカ番号>` のパターンに従っています。そのため、私たちのアプリのコンテナとmysqlデータベースのコンテナをすばやく見分けることが非常に簡単です。
 
 ![Docker Dashboard with app project expanded](dashboard-app-project-expanded.png)
 
 
 ## スタックのシャットダウン
 
-すべてを解体する準備ができたら、単に `docker-compose down` を実行するか、Docker Dashboardでアプリ全体のごみ箱をクリックしてください。コンテナーが停止し、ネットワークが削除されます。
+すべてを解体する準備ができたら、単に `docker compose down` を実行するか、Docker Dashboardでアプリ全体のごみ箱をクリックしてください。コンテナーが停止し、ネットワークが削除されます。
 
 !!! warning "ボリュームの削除"
     デフォルトでは、Composeファイル内の名前付きボリュームは、`docker compose down` を実行したときには削除されません。ボリュームを削除したい場合は、`--volumes`フラグを追加する必要があります。
 
     全体のアプリを削除すると、Docker Dashboardはボリュームを削除しません。
 
-解体後、別のプロジェクトに切り替えて、`docker compose up` を実行し、そのプロジェクトに貢献する準備ができました！それ以上簡単になります。
+一度取り壊した後、他のプロジェクトに切り替えて、`docker compose up`を実行し、そのプロジェクトに貢献する準備ができます！それ以上にシンプルなことはありません！
 
 
 ## まとめ
 
 このセクションでは、Docker Composeについて学び、複数のサービスアプリケーションの定義と共有を大幅に簡素化する方法を学びました。コマンドを適切なCompose形式に変換して、Composeファイルを作成しました。
 
-これで、チュートリアルをまとめ始めています。ただし、私たちが使用していたDockerfileには大きな問題があるため、イメージのビルドに関するいくつかのベストプラクティスをカバーする必要があります。それでは、見てみましょう！
+この時点で、チュートリアルのまとめに入っています。しかし、私たちが使用しているDockerfileに大きな問題があるため、イメージのビルドに関するいくつかのベストプラクティスをカバーしたいと思います。それでは、見てみましょう！
