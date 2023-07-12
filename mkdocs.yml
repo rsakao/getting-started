@@ -33,6 +33,8 @@ plugins:
   - search
   - minify:
       minify_html: true
+  - timetoread:
+      wpm: 100
 
 # Customization
 extra:
