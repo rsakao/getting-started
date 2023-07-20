@@ -58,7 +58,7 @@
 
      `-d`フラグと`-p`フラグを覚えていますか？私たちは新しいコンテナを「デタッチド」モード（バックグラウンド）で実行し、ホストのポート3000とコンテナのポート3000の間にマッピングを作成しています。ポートマッピングがない場合、アプリケーションにアクセスできません。
 
-1. 数秒後に、Webブラウザを[http：// localhost：3000]（http：// localhost：3000）に開いてください。アプリが表示されます！
+1. 数秒後に、Webブラウザで[http://localhost:3000](http://localhost:3000)を開いてください。アプリが表示されます！
 
      ![Empty Todo List](todo-list-empty.png){: style="width:450px;margin-top:20px;"}
      {: .text-center }
